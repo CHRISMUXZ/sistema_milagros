@@ -149,12 +149,13 @@ def graficar_barras():
 
 # --- SIDEBAR Y NAVEGACIÓN ---
 with st.sidebar:
-    st.image("https://i.imgur.com/Vi3N8kV.png", width=150)
+    st.image("logo_milagros.png", width=150)
     st.markdown("## 📂 Menú de Opciones")
     menu = st.radio("", [
         "📅 Registrar Ganancia", "📉 Registrar Gasto", "📊 Resumen", 
         "📙 Historial", "📈 Gráfico Línea", "📉 Gráfico Barras"
     ])
+
 
 if menu == "📅 Registrar Ganancia":
     registrar_dato("ganancia")
