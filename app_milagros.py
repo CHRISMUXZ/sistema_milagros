@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 import matplotlib.pyplot as plt
 import pandas as pd  # <- NUEVO
+from io import BytesIO
 
 # --- AUTENTICACIÓN ---
 PASSWORD = "Milagritosgorditacerdita123"
@@ -26,7 +27,24 @@ if not st.session_state.autenticado:
 ARCHIVO_HISTORIAL = "historial_semanal.json"
 ARCHIVO_GANANCIAS = "ganancias.json"
 ARCHIVO_GASTOS = "pagos.json"
+def exportar_a_excel():
+    with st.expander("📤 Exportar Historial a Excel", expanded=True):
+        if not historial:
+            st.warning("⚠️ No hay historial para exportar.")
+            return
+        
+        df = pd.DataFrame(historial)
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name="Historial Semanal")
+        output.seek(0)
 
+        st.download_button(
+            label="⬇️ Descargar Excel",
+            data=output,
+            file_name="historial_milagros.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 def cargar_datos(archivo):
     try:
         with open(archivo, 'r', encoding='utf-8') as f:
@@ -164,24 +182,21 @@ st.markdown("<h1 style='text-align: center; color: #6c3483;'>💼 Sistema Financ
 
 menu = st.sidebar.radio(
     "📂 Menú principal",
-    ["📥 Registrar Ganancia", "📤 Registrar Gasto", "📊 Resumen", "📚 Historial", "📈 Gráfico Línea", "📉 Gráfico Barras"]
+    ["📥 Registrar Ganancia", "📤 Registrar Gasto", "📊 Resumen", "📚 Historial", "📈 Gráfico Línea", "📉 Gráfico Barras", "📤 Exportar a Excel"]
 )
-
 
 if menu == "📥 Registrar Ganancia":
     registrar_dato("ganancia")
-
 elif menu == "📤 Registrar Gasto":
     registrar_dato("gasto")
-
 elif menu == "📊 Resumen":
     mostrar_resumen()
-
 elif menu == "📚 Historial":
     mostrar_historial()
-
 elif menu == "📈 Gráfico Línea":
     graficar()
-
 elif menu == "📉 Gráfico Barras":
     graficar_barras()
+elif menu == "📤 Exportar a Excel":
+    exportar_a_excel()
+
