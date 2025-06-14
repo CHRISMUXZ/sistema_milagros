@@ -10,7 +10,7 @@ if "autenticado" not in st.session_state:
 # Si no está autenticado, pide contraseña
 if not st.session_state.autenticado:
     st.title("🔒 Acceso restringido")
-    password_input = st.text_input("Ingresa la contraseña:", type="password").upper()
+    password_input = st.text_input("Ingresa la contraseña:", type="password").lower()
 
     if password_input == PASSWORD:
         st.session_state.autenticado = True
