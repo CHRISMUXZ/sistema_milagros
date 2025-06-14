@@ -3,10 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 from datetime import datetime
-import calendar
-
-# Configuración de página (esto siempre primero)
-st.set_page_config(page_title="Sistema Financiero - Milagros", layout="centered")
 
 # --- LOGIN SIMPLE ---
 PASSWORD = "Milagritosgorditacerdita123"
@@ -21,12 +17,14 @@ if not st.session_state.authenticated:
         if password == PASSWORD:
             st.session_state.authenticated = True
             st.success("¡Bienvenido, Chris!")
-            st.experimental_rerun()
         else:
             st.error("Contraseña incorrecta")
     st.stop()
 
-# --- CONFIGURACIÓN Y CARGA DE DATOS ---
+# --- CONFIGURACIÓN DE PÁGINA (después del login) ---
+st.set_page_config(page_title="Sistema Financiero - Milagros", layout="centered")
+
+# --- CARGA DE DATOS ---
 file_path = "data_milagros.csv"
 fecha_actual = datetime.now().strftime("%Y-%m-%d")
 semana_actual = f"{datetime.now().isocalendar().year}-W{datetime.now().isocalendar().week}"
