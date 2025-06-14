@@ -3,6 +3,25 @@ import pandas as pd
 import os
 import datetime
 import matplotlib.pyplot as plt
+# Al inicio del script
+def login():
+    st.sidebar.title("🔒 Inicio de Sesión")
+    usuario = st.sidebar.text_input("Usuario")
+    contraseña = st.sidebar.text_input("Contraseña", type="password")
+    if st.sidebar.button("Iniciar Sesión"):
+        if usuario == "admin" and contraseña == "milagros123":
+            st.session_state["logueado"] = True
+        else:
+            st.sidebar.error("Usuario o contraseña incorrectos")
+
+# Antes del menú principal
+if "logueado" not in st.session_state:
+    st.session_state["logueado"] = False
+
+if not st.session_state["logueado"]:
+    login()
+    st.stop()
+
 
 # Configuración inicial
 st.set_page_config(page_title="Sistema Financiero - Milagros", layout="centered")
