@@ -1,4 +1,25 @@
 import streamlit as st
+
+# Contraseña que solo tú conocerás
+PASSWORD = "mi_clave_supersecreta"  # cámbiala por algo que solo tú sepas
+
+# Estado de autenticación
+if "autenticado" not in st.session_state:
+    st.session_state.autenticado = False
+
+# Si no está autenticado, pide contraseña
+if not st.session_state.autenticado:
+    st.title("🔒 Acceso restringido")
+    password_input = st.text_input("Ingresa la contraseña:", type="password")
+
+    if password_input == PASSWORD:
+        st.session_state.autenticado = True
+        st.experimental_rerun()
+    elif password_input != "":
+        st.error("❌ Contraseña incorrecta")
+    st.stop()  # Detiene el resto del código si no hay acceso
+
+import streamlit as st
 import json
 import os
 from datetime import datetime
