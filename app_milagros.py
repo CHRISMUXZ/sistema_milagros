@@ -1,7 +1,7 @@
 import streamlit as st
 
 # Contraseña que solo tú conocerás
-PASSWORD = "mi_clave_supersecreta"  # cámbiala por algo que solo tú sepas
+PASSWORD = "Milagritosgorditacerdita123"  # cámbiala por algo que solo tú sepas
 
 # Estado de autenticación
 if "autenticado" not in st.session_state:
