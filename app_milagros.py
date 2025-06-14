@@ -27,6 +27,7 @@ if ultima_fecha is None or (hoy - pd.to_datetime(ultima_fecha).date()).days >= 7
 
 # Funciones principales
 def registrar_dato(tipo):
+    global df  # <- Esto debe ir aquí arriba
     st.subheader(f"Registrar {tipo}")
     monto = st.number_input("Monto (S/.)", min_value=0.0, step=0.1, format="%.2f")
     descripcion = st.text_input("Descripción")
@@ -35,7 +36,6 @@ def registrar_dato(tipo):
     if st.button("Guardar"):
         if monto > 0 and descripcion.strip() != "":
             nuevo = pd.DataFrame([[fecha, tipo, monto, descripcion]], columns=df.columns)
-            global df
             df = pd.concat([df, nuevo], ignore_index=True)
             df.to_excel(archivo_excel, index=False)
             st.success(f"{tipo} registrada correctamente.")
