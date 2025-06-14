@@ -3,6 +3,7 @@ import json
 import os
 from datetime import datetime
 import matplotlib.pyplot as plt
+import pandas as pd  # <- NUEVO
 
 # --- AUTENTICACIÓN ---
 PASSWORD = "Milagritosgorditacerdita123"
@@ -103,12 +104,17 @@ def mostrar_historial():
             st.write(f"🟢 Neta: S/ {semana['neta']:.2f}")
             st.markdown("---")
 
+        if st.button("📥 Exportar historial a Excel"):
+            df = pd.DataFrame(historial)
+            df.to_excel("historial_milagros.xlsx", index=False)
+            st.success("✅ Historial exportado como 'historial_milagros.xlsx'")
+
 def graficar():
     with st.expander("📈 Gráficos Semanales", expanded=False):
         if not historial:
             st.warning("⚠️ No hay datos suficientes para graficar.")
             return
-        
+
         semanas = [f"Semana {i+1}" for i in range(len(historial))]
         ganados = [s['ganado'] for s in historial]
         gastados = [s['gastado'] for s in historial]
@@ -130,6 +136,7 @@ def graficar():
         ax.legend()
         ax.grid(True)
         st.pyplot(fig)
+
 def graficar_barras():
     with st.expander("📊 Gráfico de Barras Comparativo", expanded=False):
         if not historial:
@@ -161,24 +168,19 @@ menu = st.sidebar.selectbox(
 )
 
 if menu == "📥 Registrar Ganancia":
-    with st.expander("🟢 Formulario de Registro de Ganancias", expanded=True):
-        registrar_dato("ganancia")
+    registrar_dato("ganancia")
 
 elif menu == "📤 Registrar Gasto":
-    with st.expander("🔴 Formulario de Registro de Gastos", expanded=True):
-        registrar_dato("gasto")
+    registrar_dato("gasto")
 
 elif menu == "📊 Resumen":
-    with st.expander("📋 Estado Actual", expanded=True):
-        mostrar_resumen()
+    mostrar_resumen()
 
 elif menu == "📚 Historial":
-    with st.expander("📅 Historial de Semanas", expanded=True):
-        mostrar_historial()
+    mostrar_historial()
 
 elif menu == "📈 Gráfico Línea":
     graficar()
 
 elif menu == "📉 Gráfico Barras":
     graficar_barras()
-
