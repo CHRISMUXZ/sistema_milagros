@@ -4,23 +4,24 @@ import os
 import datetime
 import matplotlib.pyplot as plt
 # Al inicio del script
+import streamlit as st
+
+# Login simple
 def login():
-    st.sidebar.title("🔒 Inicio de Sesión")
-    usuario = st.sidebar.text_input("Usuario")
-    contraseña = st.sidebar.text_input("Contraseña", type="password")
-    if st.sidebar.button("Iniciar Sesión"):
-        if usuario == "admin" and contraseña == "milagros123":
-            st.session_state["logueado"] = True
-        else:
-            st.sidebar.error("Usuario o contraseña incorrectos")
+    st.title("🔒 Acceso al Sistema Financiero")
+    password = st.text_input("Contraseña", type="password")
+    if password == "Milagritosgorditacerdita123":
+        st.success("Acceso concedido")
+        return True
+    elif password:
+        st.error("Contraseña incorrecta")
+        return False
+    return False
 
-# Antes del menú principal
-if "logueado" not in st.session_state:
-    st.session_state["logueado"] = False
-
-if not st.session_state["logueado"]:
-    login()
+# Validar acceso antes de cargar el resto de la app
+if not login():
     st.stop()
+
 
 
 # Configuración inicial
