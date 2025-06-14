@@ -3,6 +3,31 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 from datetime import datetime, timedelta
+import streamlit as st
+
+# Esto debe ir antes de cualquier otro comando Streamlit
+st.set_page_config(page_title="Sistema Financiero - Milagros", layout="centered")
+
+# --- LOGIN CON CONTRASEÑA SIMPLE ---
+PASSWORD = "Milagritosgorditacerdita123"
+
+# Verificar si el usuario ya está autenticado
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+
+if not st.session_state.authenticated:
+    st.title("🔒 Acceso al Sistema Financiero de Milagros")
+    password = st.text_input("Ingresa la contraseña:", type="password")
+
+    if st.button("Ingresar"):
+        if password == PASSWORD:
+            st.session_state.authenticated = True
+            st.success("¡Bienvenido, Chris!")
+            st.experimental_rerun()
+        else:
+            st.error("Contraseña incorrecta")
+
+    st.stop()  # Detiene la ejecución hasta que se autentique
 
 # Configuración general de la app
 st.set_page_config(page_title="Sistema Financiero Milagros", layout="wide")
