@@ -4,9 +4,7 @@ import os
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-# ============================
-# 🔐 AUTENTICACIÓN
-# ============================
+# --- AUTENTICACIÓN ---
 PASSWORD = "Milagritosgorditacerdita123"
 
 if "autenticado" not in st.session_state:
@@ -23,9 +21,7 @@ if not st.session_state.autenticado:
         st.error("❌ Contraseña incorrecta")
     st.stop()
 
-# ============================
-# 📁 ARCHIVOS Y FUNCIONES BASE
-# ============================
+# --- ARCHIVOS Y FUNCIONES ---
 ARCHIVO_HISTORIAL = "historial_semanal.json"
 ARCHIVO_GANANCIAS = "ganancias.json"
 ARCHIVO_GASTOS = "pagos.json"
@@ -41,9 +37,6 @@ def guardar_datos(archivo, datos):
     with open(archivo, 'w', encoding='utf-8') as f:
         json.dump(datos, f, indent=4, ensure_ascii=False)
 
-# ============================
-# 📊 CARGA INICIAL DE DATOS
-# ============================
 ganancias = cargar_datos(ARCHIVO_GANANCIAS)
 gastos = cargar_datos(ARCHIVO_GASTOS)
 historial = cargar_datos(ARCHIVO_HISTORIAL)
@@ -68,23 +61,20 @@ def verificar_cierre_semana():
         })
 
         guardar_datos(ARCHIVO_HISTORIAL, historial)
+
         ganancias = [g for g in ganancias if g["fecha"] not in semana_actual]
         gastos = [g for g in gastos if g["fecha"] not in semana_actual]
         guardar_datos(ARCHIVO_GANANCIAS, ganancias)
         guardar_datos(ARCHIVO_GASTOS, gastos)
 
-        st.success("✅ Semana cerrada. Datos guardados en el historial.")
+        st.success("✅ Semana cerrada y guardada en el historial.")
 
-# ============================
-# 💾 REGISTRAR GANANCIA / GASTO
-# ============================
 def registrar_dato(tipo):
     with st.expander(f"➕ Registrar {tipo.capitalize()}", expanded=True):
-        fecha = st.text_input("📅 Fecha (DD/MM)", value=datetime.now().strftime("%d/%m"), key=f"{tipo}_fecha")
+        fecha = st.text_input(f"📅 Fecha (DD/MM)", value=datetime.now().strftime("%d/%m"), key=f"{tipo}_fecha")
         cantidad = st.number_input("💰 Monto", min_value=0.0, step=0.5, key=f"{tipo}_monto")
-        descripcion = st.text_input("📝 Descripción", key=f"{tipo}_descripcion")
-
-        if st.button("Registrar", key=f"{tipo}_boton"):
+        descripcion = st.text_input("📝 Descripción", key=f"{tipo}_desc")
+        if st.button(f"Guardar {tipo}", key=f"{tipo}_boton"):
             entrada = {"fecha": fecha, "cantidad": cantidad, "descripcion": descripcion}
             if tipo == "ganancia":
                 ganancias.append(entrada)
@@ -93,54 +83,58 @@ def registrar_dato(tipo):
                 gastos.append(entrada)
                 guardar_datos(ARCHIVO_GASTOS, gastos)
             verificar_cierre_semana()
-            st.success(f"✅ {tipo.capitalize()} registrada correctamente.")
+            st.success(f"{tipo.capitalize()} registrada correctamente.")
 
-# ============================
-# 📌 RESUMEN ACTUAL
-# ============================
 def mostrar_resumen():
     with st.expander("📊 Resumen actual", expanded=True):
         total_ganado = sum(g["cantidad"] for g in ganancias)
         total_gastado = sum(g["cantidad"] for g in gastos)
         neta = total_ganado - total_gastado
-        st.metric("💵 Ganado", f"S/ {total_ganado:.2f}")
-        st.metric("💸 Gastado", f"S/ {total_gastado:.2f}")
-        st.metric("📈 Ganancia Neta", f"S/ {neta:.2f}")
+        st.metric("Ganado", f"S/ {total_ganado:.2f}")
+        st.metric("Gastado", f"S/ {total_gastado:.2f}")
+        st.metric("Ganancia Neta", f"S/ {neta:.2f}")
 
-# ============================
-# 📚 HISTORIAL SEMANAL
-# ============================
 def mostrar_historial():
-    with st.expander("📅 Historial Semanal", expanded=False):
+    with st.expander("📚 Historial Semanal", expanded=False):
         for i, semana in enumerate(historial, 1):
             st.markdown(f"**Semana {i}**: {semana['semana'][0]} - {semana['semana'][-1]}")
-            st.write(f"- 🟢 Ganado: S/ {semana['ganado']:.2f}")
-            st.write(f"- 🔴 Gastado: S/ {semana['gastado']:.2f}")
-            st.write(f"- ⚖️ Neta: S/ {semana['neta']:.2f}")
+            st.write(f"🔹 Ganado: S/ {semana['ganado']:.2f}")
+            st.write(f"🔻 Gastado: S/ {semana['gastado']:.2f}")
+            st.write(f"🟢 Neta: S/ {semana['neta']:.2f}")
+            st.markdown("---")
 
-# ============================
-# 📈 GRÁFICA DE GANANCIA NETA
-# ============================
 def graficar():
-    with st.expander("📈 Gráfica de Ganancia Neta por Semana", expanded=False):
+    with st.expander("📈 Gráficos Semanales", expanded=False):
         if not historial:
             st.warning("⚠️ No hay datos suficientes para graficar.")
             return
-        semanas = list(range(1, len(historial)+1))
+        
+        semanas = [f"Semana {i+1}" for i in range(len(historial))]
+        ganados = [s['ganado'] for s in historial]
+        gastados = [s['gastado'] for s in historial]
         netas = [s['neta'] for s in historial]
-        fig, ax = plt.subplots()
-        ax.plot(semanas, netas, marker='o', color='green')
-        ax.set_title("📊 Ganancia Neta por Semana - Tienda Milagros")
-        ax.set_xlabel("Semana")
-        ax.set_ylabel("Ganancia Neta (S/)")
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+        bar_width = 0.35
+        index = range(len(semanas))
+
+        ax.bar(index, ganados, bar_width, label='Ganado', color='green')
+        ax.bar([i + bar_width for i in index], gastados, bar_width, label='Gastado', color='red')
+        ax.plot([i + bar_width/2 for i in index], netas, marker='o', label='Neta', color='blue')
+
+        ax.set_xlabel("Semanas")
+        ax.set_ylabel("Monto (S/)")
+        ax.set_title("📊 Comparación Semanal - Tienda Milagros")
+        ax.set_xticks([i + bar_width/2 for i in index])
+        ax.set_xticklabels(semanas, rotation=45)
+        ax.legend()
         ax.grid(True)
         st.pyplot(fig)
 
-# ============================
-# 🎛️ INTERFAZ PRINCIPAL
-# ============================
+# --- INTERFAZ ---
 st.title("💼 Finanzas - Tienda Milagros")
-menu = st.sidebar.selectbox("Menú", ["Registrar Ganancia", "Registrar Gasto", "Resumen", "Historial", "Gráfica"])
+
+menu = st.sidebar.radio("📂 Menú", ["Registrar Ganancia", "Registrar Gasto", "Resumen", "Historial", "Gráfica"])
 
 if menu == "Registrar Ganancia":
     registrar_dato("ganancia")
