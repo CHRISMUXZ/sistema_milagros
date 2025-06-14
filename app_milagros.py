@@ -162,10 +162,11 @@ def graficar_barras():
 st.set_page_config(page_title="Finanzas Milagros 💸", layout="centered")
 st.markdown("<h1 style='text-align: center; color: #6c3483;'>💼 Sistema Financiero - Tienda Milagros</h1>", unsafe_allow_html=True)
 
-menu = st.sidebar.selectbox(
+menu = st.sidebar.radio(
     "📂 Menú principal",
     ["📥 Registrar Ganancia", "📤 Registrar Gasto", "📊 Resumen", "📚 Historial", "📈 Gráfico Línea", "📉 Gráfico Barras"]
 )
+
 
 if menu == "📥 Registrar Ganancia":
     registrar_dato("ganancia")
