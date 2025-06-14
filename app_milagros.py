@@ -3,19 +3,21 @@ import json
 import os
 from datetime import datetime
 import matplotlib.pyplot as plt
-import pandas as pd  # <- NUEVO
+import pandas as pd
 from io import BytesIO
+
+# --- CONFIGURACIÓN DE PÁGINA ---
+st.set_page_config(page_title="Finanzas Milagros 💸", layout="centered")
+st.markdown("<h1 style='text-align: center; color: #6c3483;'>💼 Sistema Financiero - Tienda Milagros</h1>", unsafe_allow_html=True)
 
 # --- AUTENTICACIÓN ---
 PASSWORD = "Milagritosgorditacerdita123"
-
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 
 if not st.session_state.autenticado:
     st.title("🔒 Acceso restringido")
     password_input = st.text_input("Ingresa la contraseña:", type="password")
-
     if password_input == PASSWORD:
         st.session_state.autenticado = True
         st.rerun()
@@ -23,28 +25,12 @@ if not st.session_state.autenticado:
         st.error("❌ Contraseña incorrecta")
     st.stop()
 
-# --- ARCHIVOS Y FUNCIONES ---
+# --- RUTAS DE ARCHIVOS ---
 ARCHIVO_HISTORIAL = "historial_semanal.json"
 ARCHIVO_GANANCIAS = "ganancias.json"
 ARCHIVO_GASTOS = "pagos.json"
-def exportar_a_excel():
-    with st.expander("📤 Exportar Historial a Excel", expanded=True):
-        if not historial:
-            st.warning("⚠️ No hay historial para exportar.")
-            return
-        
-        df = pd.DataFrame(historial)
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name="Historial Semanal")
-        output.seek(0)
 
-        st.download_button(
-            label="⬇️ Descargar Excel",
-            data=output,
-            file_name="historial_milagros.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+# --- FUNCIONES DE ARCHIVO ---
 def cargar_datos(archivo):
     try:
         with open(archivo, 'r', encoding='utf-8') as f:
@@ -56,10 +42,12 @@ def guardar_datos(archivo, datos):
     with open(archivo, 'w', encoding='utf-8') as f:
         json.dump(datos, f, indent=4, ensure_ascii=False)
 
+# --- CARGA INICIAL ---
 ganancias = cargar_datos(ARCHIVO_GANANCIAS)
 gastos = cargar_datos(ARCHIVO_GASTOS)
 historial = cargar_datos(ARCHIVO_HISTORIAL)
 
+# --- FUNCIONES PRINCIPALES ---
 def verificar_cierre_semana():
     global ganancias, gastos, historial
     fechas_ganancias = {g["fecha"] for g in ganancias}
@@ -80,7 +68,6 @@ def verificar_cierre_semana():
         })
 
         guardar_datos(ARCHIVO_HISTORIAL, historial)
-
         ganancias = [g for g in ganancias if g["fecha"] not in semana_actual]
         gastos = [g for g in gastos if g["fecha"] not in semana_actual]
         guardar_datos(ARCHIVO_GANANCIAS, ganancias)
@@ -122,11 +109,6 @@ def mostrar_historial():
             st.write(f"🟢 Neta: S/ {semana['neta']:.2f}")
             st.markdown("---")
 
-        if st.button("📥 Exportar historial a Excel"):
-            df = pd.DataFrame(historial)
-            df.to_excel("historial_milagros.xlsx", index=False)
-            st.success("✅ Historial exportado como 'historial_milagros.xlsx'")
-
 def graficar():
     with st.expander("📈 Gráficos Semanales", expanded=False):
         if not historial:
@@ -156,7 +138,7 @@ def graficar():
         st.pyplot(fig)
 
 def graficar_barras():
-    with st.expander("📊 Gráfico de Barras Comparativo", expanded=False):
+    with st.expander("📉 Gráfico de Barras Comparativo", expanded=False):
         if not historial:
             st.warning("⚠️ No hay datos para graficar.")
             return
@@ -173,18 +155,34 @@ def graficar_barras():
         ax.set_title("📉 Gráfico de Barras - Ganancias vs Gastos")
         ax.legend()
         ax.grid(axis='y')
-
         st.pyplot(fig)
 
-# --- INTERFAZ ---
-st.set_page_config(page_title="Finanzas Milagros 💸", layout="centered")
-st.markdown("<h1 style='text-align: center; color: #6c3483;'>💼 Sistema Financiero - Tienda Milagros</h1>", unsafe_allow_html=True)
+def exportar_a_excel():
+    with st.expander("📤 Exportar Historial a Excel", expanded=True):
+        if not historial:
+            st.warning("⚠️ No hay historial para exportar.")
+            return
+        
+        df = pd.DataFrame(historial)
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name="Historial Semanal")
+        output.seek(0)
 
+        st.download_button(
+            label="⬇️ Descargar Excel",
+            data=output,
+            file_name="historial_milagros.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+# --- MENÚ PRINCIPAL ---
 menu = st.sidebar.radio(
     "📂 Menú principal",
     ["📥 Registrar Ganancia", "📤 Registrar Gasto", "📊 Resumen", "📚 Historial", "📈 Gráfico Línea", "📉 Gráfico Barras", "📤 Exportar a Excel"]
 )
 
+# --- NAVEGACIÓN ---
 if menu == "📥 Registrar Ganancia":
     registrar_dato("ganancia")
 elif menu == "📤 Registrar Gasto":
@@ -199,4 +197,3 @@ elif menu == "📉 Gráfico Barras":
     graficar_barras()
 elif menu == "📤 Exportar a Excel":
     exportar_a_excel()
-
