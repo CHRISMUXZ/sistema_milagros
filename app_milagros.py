@@ -67,13 +67,20 @@ def verificar_cierre_semana():
             "neta": ganancia_neta
         })
 
+        # Guardar historial actualizado
         guardar_datos(ARCHIVO_HISTORIAL, historial)
+
+        # Vaciar datos antiguos
         ganancias = [g for g in ganancias if g["fecha"] not in semana_actual]
         gastos = [g for g in gastos if g["fecha"] not in semana_actual]
         guardar_datos(ARCHIVO_GANANCIAS, ganancias)
         guardar_datos(ARCHIVO_GASTOS, gastos)
 
-        st.success("✅ Semana cerrada y guardada en el historial.")
+        # 🔁 EXPORTACIÓN AUTOMÁTICA A EXCEL
+        df = pd.DataFrame(historial)
+        df.to_excel("historial_milagros.xlsx", index=False)
+
+        st.success("✅ Semana cerrada, historial actualizado y Excel exportado automáticamente.")
 
 def registrar_dato(tipo):
     with st.expander(f"➕ Registrar {tipo.capitalize()}", expanded=True):
