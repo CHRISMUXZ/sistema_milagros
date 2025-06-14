@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
-from datetime import datetime
 
 # --- LOGIN SIMPLE ---
 PASSWORD = "Milagritosgorditacerdita123"
@@ -26,8 +25,6 @@ st.set_page_config(page_title="Sistema Financiero - Milagros", layout="centered"
 
 # --- CARGA DE DATOS ---
 file_path = "data_milagros.csv"
-fecha_actual = datetime.now().strftime("%Y-%m-%d")
-semana_actual = f"{datetime.now().isocalendar().year}-W{datetime.now().isocalendar().week}"
 
 if os.path.exists(file_path):
     df = pd.read_csv(file_path)
@@ -38,11 +35,11 @@ else:
 def guardar_datos():
     df.to_csv(file_path, index=False)
 
-def registrar_dato(tipo, descripcion, monto):
+def registrar_dato(fecha, semana, tipo, descripcion, monto):
     global df
     nuevo = pd.DataFrame([{
-        "Fecha": fecha_actual,
-        "Semana": semana_actual,
+        "Fecha": fecha,
+        "Semana": semana,
         "Tipo": tipo,
         "Descripción": descripcion,
         "Monto": monto
@@ -51,8 +48,10 @@ def registrar_dato(tipo, descripcion, monto):
     guardar_datos()
 
 def exportar_excel_automatico():
-    nombre_archivo = f"milagros_semana_{semana_actual}.xlsx"
-    df.to_excel(nombre_archivo, index=False)
+    if not df.empty:
+        ultima_semana = df["Semana"].iloc[-1]
+        nombre_archivo = f"milagros_semana_{ultima_semana}.xlsx"
+        df.to_excel(nombre_archivo, index=False)
 
 # --- SIDEBAR MENÚ ---
 with st.sidebar:
@@ -65,23 +64,29 @@ with st.sidebar:
 # --- FUNCIONALIDADES ---
 if menu == "📅 Registrar Ganancia":
     st.header("Registrar Ganancia")
+    fecha = st.date_input("Fecha de la ganancia")
+    semana = st.text_input("Semana (ej. 2025-W24)")
     descripcion = st.text_input("Descripción")
     monto = st.number_input("Monto (S/)", min_value=0.0, format="%.2f")
     if st.button("Registrar"):
-        registrar_dato("Ganancia", descripcion, monto)
+        registrar_dato(str(fecha), semana, "Ganancia", descripcion, monto)
         st.success("✅ Ganancia registrada correctamente")
 
 elif menu == "📉 Registrar Gasto":
     st.header("Registrar Gasto")
+    fecha = st.date_input("Fecha del gasto")
+    semana = st.text_input("Semana (ej. 2025-W24)")
     descripcion = st.text_input("Descripción del Gasto")
     monto = st.number_input("Monto del Gasto (S/)", min_value=0.0, format="%.2f")
     if st.button("Registrar"):
-        registrar_dato("Gasto", descripcion, monto)
+        registrar_dato(str(fecha), semana, "Gasto", descripcion, monto)
         st.success("✅ Gasto registrado correctamente")
 
 elif menu == "📊 Resumen":
     st.header("Resumen Financiero Semanal")
-    df_semana = df[df["Semana"] == semana_actual]
+    semanas = df["Semana"].unique()
+    semana_sel = st.selectbox("Selecciona una semana", sorted(semanas, reverse=True))
+    df_semana = df[df["Semana"] == semana_sel]
     total_ganancia = df_semana[df_semana["Tipo"] == "Ganancia"]["Monto"].sum()
     total_gasto = df_semana[df_semana["Tipo"] == "Gasto"]["Monto"].sum()
     neto = total_ganancia - total_gasto
