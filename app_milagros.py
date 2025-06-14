@@ -130,19 +130,55 @@ def graficar():
         ax.legend()
         ax.grid(True)
         st.pyplot(fig)
+def graficar_barras():
+    with st.expander("📊 Gráfico de Barras Comparativo", expanded=False):
+        if not historial:
+            st.warning("⚠️ No hay datos para graficar.")
+            return
+
+        semanas = [f"Semana {i+1}" for i in range(len(historial))]
+        ganados = [s["ganado"] for s in historial]
+        gastados = [s["gastado"] for s in historial]
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.bar(semanas, ganados, label="Ganado", color="seagreen")
+        ax.bar(semanas, gastados, bottom=ganados, label="Gastado", color="salmon")
+
+        ax.set_ylabel("Montos (S/)")
+        ax.set_title("📉 Gráfico de Barras - Ganancias vs Gastos")
+        ax.legend()
+        ax.grid(axis='y')
+
+        st.pyplot(fig)
 
 # --- INTERFAZ ---
-st.title("💼 Finanzas - Tienda Milagros")
+st.set_page_config(page_title="Finanzas Milagros 💸", layout="centered")
+st.markdown("<h1 style='text-align: center; color: #6c3483;'>💼 Sistema Financiero - Tienda Milagros</h1>", unsafe_allow_html=True)
 
-menu = st.sidebar.radio("📂 Menú", ["Registrar Ganancia", "Registrar Gasto", "Resumen", "Historial", "Gráfica"])
+menu = st.sidebar.selectbox(
+    "📂 Menú principal",
+    ["📥 Registrar Ganancia", "📤 Registrar Gasto", "📊 Resumen", "📚 Historial", "📈 Gráfico Línea", "📉 Gráfico Barras"]
+)
 
-if menu == "Registrar Ganancia":
-    registrar_dato("ganancia")
-elif menu == "Registrar Gasto":
-    registrar_dato("gasto")
-elif menu == "Resumen":
-    mostrar_resumen()
-elif menu == "Historial":
-    mostrar_historial()
-elif menu == "Gráfica":
+if menu == "📥 Registrar Ganancia":
+    with st.expander("🟢 Formulario de Registro de Ganancias", expanded=True):
+        registrar_dato("ganancia")
+
+elif menu == "📤 Registrar Gasto":
+    with st.expander("🔴 Formulario de Registro de Gastos", expanded=True):
+        registrar_dato("gasto")
+
+elif menu == "📊 Resumen":
+    with st.expander("📋 Estado Actual", expanded=True):
+        mostrar_resumen()
+
+elif menu == "📚 Historial":
+    with st.expander("📅 Historial de Semanas", expanded=True):
+        mostrar_historial()
+
+elif menu == "📈 Gráfico Línea":
     graficar()
+
+elif menu == "📉 Gráfico Barras":
+    graficar_barras()
+
