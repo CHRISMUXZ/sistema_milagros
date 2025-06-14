@@ -1,171 +1,133 @@
 import streamlit as st
-import json
-import os
-from datetime import datetime
-import matplotlib.pyplot as plt
 import pandas as pd
-from io import BytesIO
+import os
+import datetime
+import matplotlib.pyplot as plt
 
-# --- CONFIGURACIÓN GENERAL ---
-st.set_page_config(page_title="💸 Finanzas Milagros", layout="wide")
-st.markdown("""
-    <h1 style='text-align: center; color: #8e44ad;'>✨ Sistema Financiero - Tienda Milagros ✨</h1>
-    <hr style='border: 1px solid #dcdcdc;'>
-""", unsafe_allow_html=True)
+# Configuración inicial
+st.set_page_config(page_title="Sistema Financiero - Milagros", layout="centered")
 
-# --- AUTENTICACIÓN ---
-PASSWORD = "Milagritosgorditacerdita123"
-if "autenticado" not in st.session_state:
-    st.session_state.autenticado = False
-if not st.session_state.autenticado:
-    st.title("🔐 Acceso restringido")
-    password_input = st.text_input("Ingresa la contraseña:", type="password")
-    if password_input == PASSWORD:
-        st.session_state.autenticado = True
-        st.rerun()
-    elif password_input != "":
-        st.error("❌ Contraseña incorrecta")
-    st.stop()
+st.title("✨ Sistema Financiero - Tienda Milagros ✨")
 
-# --- ARCHIVOS ---
-ARCHIVO_HISTORIAL = "historial_semanal.json"
-ARCHIVO_GANANCIAS = "ganancias.json"
-ARCHIVO_GASTOS = "pagos.json"
+# Nombre del archivo de base de datos
+archivo_excel = "registro_milagros.xlsx"
 
-def cargar_datos(archivo):
-    try:
-        with open(archivo, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except:
-        return []
+# Cargar datos si existe el archivo
+if os.path.exists(archivo_excel):
+    df = pd.read_excel(archivo_excel)
+else:
+    df = pd.DataFrame(columns=["Fecha", "Tipo", "Monto", "Descripción"])
 
-def guardar_datos(archivo, datos):
-    with open(archivo, 'w', encoding='utf-8') as f:
-        json.dump(datos, f, indent=4, ensure_ascii=False)
+# Guardado automático cada 7 días
+ultima_fecha = df["Fecha"].max() if not df.empty else None
+hoy = datetime.datetime.today().date()
 
-ganancias = cargar_datos(ARCHIVO_GANANCIAS)
-gastos = cargar_datos(ARCHIVO_GASTOS)
-historial = cargar_datos(ARCHIVO_HISTORIAL)
+if ultima_fecha is None or (hoy - pd.to_datetime(ultima_fecha).date()).days >= 7:
+    df.to_excel(archivo_excel, index=False)
 
-def verificar_cierre_semana():
-    global ganancias, gastos, historial
-    fechas_ganancias = {g["fecha"] for g in ganancias}
-    fechas_gastos = {g["fecha"] for g in gastos}
-    fechas_totales = sorted(fechas_ganancias.union(fechas_gastos))
-    if len(fechas_totales) >= 7:
-        semana_actual = fechas_totales[:7]
-        total_ganado = sum(g["cantidad"] for g in ganancias if g["fecha"] in semana_actual)
-        total_gastado = sum(g["cantidad"] for g in gastos if g["fecha"] in semana_actual)
-        ganancia_neta = total_ganado - total_gastado
-
-        historial.append({
-            "semana": semana_actual,
-            "ganado": total_ganado,
-            "gastado": total_gastado,
-            "neta": ganancia_neta
-        })
-        guardar_datos(ARCHIVO_HISTORIAL, historial)
-
-        ganancias = [g for g in ganancias if g["fecha"] not in semana_actual]
-        gastos = [g for g in gastos if g["fecha"] not in semana_actual]
-        guardar_datos(ARCHIVO_GANANCIAS, ganancias)
-        guardar_datos(ARCHIVO_GASTOS, gastos)
-
-        # Exportación automática
-        df = pd.DataFrame(historial)
-        df.to_excel("historial_milagros.xlsx", index=False)
-
-        st.success("✅ Semana cerrada y guardada en historial + Excel.")
-
+# Funciones principales
 def registrar_dato(tipo):
-    st.markdown(f"## ➕ Registrar {tipo.capitalize()}")
-    fecha = st.text_input("📅 Fecha (DD/MM)", value=datetime.now().strftime("%d/%m"), key=f"{tipo}_fecha")
-    cantidad = st.number_input("💰 Monto", min_value=0.0, step=0.5, key=f"{tipo}_monto")
-    descripcion = st.text_input("📝 Descripción", key=f"{tipo}_desc")
-    if st.button(f"💾 Guardar {tipo.capitalize()}", key=f"{tipo}_boton"):
-        entrada = {"fecha": fecha, "cantidad": cantidad, "descripcion": descripcion}
-        if tipo == "ganancia":
-            ganancias.append(entrada)
-            guardar_datos(ARCHIVO_GANANCIAS, ganancias)
-        else:
-            gastos.append(entrada)
-            guardar_datos(ARCHIVO_GASTOS, gastos)
-        verificar_cierre_semana()
-        st.success(f"✅ {tipo.capitalize()} registrada correctamente.")
+    st.subheader(f"Registrar {tipo}")
+    monto = st.number_input("Monto (S/.)", min_value=0.0, step=0.1, format="%.2f")
+    descripcion = st.text_input("Descripción")
+    fecha = st.date_input("Fecha", value=datetime.date.today())
 
-def mostrar_resumen():
-    st.markdown("## 📊 Resumen actual")
-    total_ganado = sum(g["cantidad"] for g in ganancias)
-    total_gastado = sum(g["cantidad"] for g in gastos)
-    neta = total_ganado - total_gastado
-    st.metric("Ganado", f"S/ {total_ganado:.2f}")
-    st.metric("Gastado", f"S/ {total_gastado:.2f}")
-    st.metric("Ganancia Neta", f"S/ {neta:.2f}")
+    if st.button("Guardar"):
+        if monto > 0 and descripcion.strip() != "":
+            nuevo = pd.DataFrame([[fecha, tipo, monto, descripcion]], columns=df.columns)
+            global df
+            df = pd.concat([df, nuevo], ignore_index=True)
+            df.to_excel(archivo_excel, index=False)
+            st.success(f"{tipo} registrada correctamente.")
+        else:
+            st.error("Por favor, completa todos los campos.")
 
 def mostrar_historial():
-    st.markdown("## 📚 Historial Semanal")
-    for i, semana in enumerate(historial, 1):
-        st.markdown(f"**Semana {i}**: {semana['semana'][0]} - {semana['semana'][-1]}")
-        st.write(f"🔹 Ganado: S/ {semana['ganado']:.2f}")
-        st.write(f"🔻 Gastado: S/ {semana['gastado']:.2f}")
-        st.write(f"🟢 Neta: S/ {semana['neta']:.2f}")
-        st.markdown("---")
+    st.subheader("📙 Historial Completo")
+    st.dataframe(df)
 
-def graficar():
-    st.markdown("## 📈 Gráfico de Línea Semanal")
-    if not historial:
-        st.warning("⚠️ No hay datos para graficar.")
+    if st.button("📤 Exportar a Excel"):
+        df.to_excel("registro_exportado.xlsx", index=False)
+        st.success("Datos exportados correctamente como 'registro_exportado.xlsx'.")
+
+def resumen_semanal():
+    st.subheader("📊 Resumen Semanal")
+    hoy = datetime.datetime.today().date()
+    semana_actual = hoy - datetime.timedelta(days=7)
+    df_reciente = df[pd.to_datetime(df["Fecha"]).dt.date >= semana_actual]
+
+    ingresos = df_reciente[df_reciente["Tipo"] == "Ganancia"]["Monto"].sum()
+    egresos = df_reciente[df_reciente["Tipo"] == "Gasto"]["Monto"].sum()
+    neto = ingresos - egresos
+
+    st.write(f"🟢 Ganancias (últimos 7 días): S/ {ingresos:.2f}")
+    st.write(f"🔴 Gastos (últimos 7 días): S/ {egresos:.2f}")
+    st.write(f"🟡 Ganancia Neta: S/ {neto:.2f}")
+
+def grafico_linea():
+    st.subheader("📈 Gráfico de Línea")
+    if df.empty:
+        st.warning("No hay datos para mostrar.")
         return
-    semanas = [f"Semana {i+1}" for i in range(len(historial))]
-    ganados = [s['ganado'] for s in historial]
-    gastados = [s['gastado'] for s in historial]
-    netas = [s['neta'] for s in historial]
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(semanas, ganados, marker='o', label='Ganado', color='green')
-    ax.plot(semanas, gastados, marker='o', label='Gastado', color='red')
-    ax.plot(semanas, netas, marker='o', label='Neta', color='blue')
-    ax.set_title("Comparación Semanal")
-    ax.set_ylabel("Monto (S/)")
-    ax.legend()
-    ax.grid(True)
-    st.pyplot(fig)
 
-def graficar_barras():
-    st.markdown("## 📉 Gráfico de Barras")
-    if not historial:
-        st.warning("⚠️ No hay datos para graficar.")
+    df_ordenado = df.copy()
+    df_ordenado["Fecha"] = pd.to_datetime(df_ordenado["Fecha"])
+    df_ordenado = df_ordenado.sort_values("Fecha")
+
+    ganancias = df_ordenado[df_ordenado["Tipo"] == "Ganancia"]
+    gastos = df_ordenado[df_ordenado["Tipo"] == "Gasto"]
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(ganancias["Fecha"], ganancias["Monto"], label="Ganancia", marker="o", color="green")
+    plt.plot(gastos["Fecha"], gastos["Monto"], label="Gasto", marker="x", color="red")
+    plt.xlabel("Fecha")
+    plt.ylabel("Monto (S/.)")
+    plt.title("Historial Financiero")
+    plt.legend()
+    plt.grid(True)
+    st.pyplot(plt)
+
+def grafico_barras():
+    st.subheader("📉 Gráfico de Barras por Semana")
+    if df.empty:
+        st.warning("No hay datos para mostrar.")
         return
-    semanas = [f"Semana {i+1}" for i in range(len(historial))]
-    ganados = [s['ganado'] for s in historial]
-    gastados = [s['gastado'] for s in historial]
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.bar(semanas, ganados, label='Ganado', color='seagreen')
-    ax.bar(semanas, gastados, bottom=ganados, label='Gastado', color='salmon')
-    ax.set_title("Ganancias vs Gastos")
-    ax.set_ylabel("Montos (S/)")
-    ax.legend()
-    ax.grid(axis='y')
-    st.pyplot(fig)
 
-# --- SIDEBAR Y NAVEGACIÓN ---
+    df_temp = df.copy()
+    df_temp["Fecha"] = pd.to_datetime(df_temp["Fecha"])
+    df_temp["Semana"] = df_temp["Fecha"].dt.strftime('%Y-%U')
+
+    resumen = df_temp.groupby(["Semana", "Tipo"])["Monto"].sum().unstack(fill_value=0)
+    resumen["Ganancia Neta"] = resumen.get("Ganancia", 0) - resumen.get("Gasto", 0)
+
+    resumen[["Ganancia", "Gasto", "Ganancia Neta"]].plot(kind="bar", figsize=(10, 6), stacked=False)
+    plt.title("Resumen Semanal")
+    plt.ylabel("Monto (S/.)")
+    plt.xticks(rotation=45)
+    st.pyplot(plt)
+
+# Menú lateral
 with st.sidebar:
-    st.image("logo_milagros.png", width=150)
     st.markdown("## 📂 Menú de Opciones")
-    menu = st.radio("", [
-        "📅 Registrar Ganancia", "📉 Registrar Gasto", "📊 Resumen", 
-        "📙 Historial", "📈 Gráfico Línea", "📉 Gráfico Barras"
+    menu = st.radio("Selecciona una opción", [
+        "📅 Registrar Ganancia",
+        "📉 Registrar Gasto",
+        "📊 Resumen",
+        "📙 Historial",
+        "📈 Gráfico Línea",
+        "📉 Gráfico Barras"
     ])
 
-
+# Opciones del menú
 if menu == "📅 Registrar Ganancia":
-    registrar_dato("ganancia")
+    registrar_dato("Ganancia")
 elif menu == "📉 Registrar Gasto":
-    registrar_dato("gasto")
+    registrar_dato("Gasto")
 elif menu == "📊 Resumen":
-    mostrar_resumen()
+    resumen_semanal()
 elif menu == "📙 Historial":
     mostrar_historial()
 elif menu == "📈 Gráfico Línea":
-    graficar()
+    grafico_linea()
 elif menu == "📉 Gráfico Barras":
-    graficar_barras()
+    grafico_barras()
