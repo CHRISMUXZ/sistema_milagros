@@ -14,7 +14,7 @@ if not st.session_state.autenticado:
 
     if password_input == PASSWORD:
         st.session_state.autenticado = True
-        st.experimental_rerun()
+        st.rerun()
     elif password_input != "":
         st.error("❌ Contraseña incorrecta")
     st.stop()  # Detiene el resto del código si no hay acceso
