@@ -5,6 +5,7 @@ import datetime
 import matplotlib.pyplot as plt
 # Al inicio del script
 import streamlit as st
+st.set_page_config(page_title="Sistema Financiero - Milagros", layout="centered")
 
 # Login simple
 def login():
